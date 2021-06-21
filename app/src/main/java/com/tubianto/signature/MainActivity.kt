@@ -2,6 +2,7 @@ package com.tubianto.signature
 
 import android.Manifest
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -9,7 +10,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +19,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.github.gcacace.signaturepad.views.SignaturePad
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
     private var WRITE_EXTERNAL_STORAGE_PERMISSION_CODE: Int = 1
@@ -85,10 +86,20 @@ class MainActivity : AppCompatActivity() {
 
     fun clickSave(view: View) {
         mSignatureBitmap = mSignature.signatureBitmap
-        dialogSignature(mSignatureBitmap)
+        val fileName = getFileName()
+        val imgPath = saveImage(mSignatureBitmap,fileName)
+        dialogSignature(mSignatureBitmap, imgPath)
     }
 
-    private fun dialogSignature(bitmap: Bitmap){
+    private fun getFileName():String{
+        return "${Calendar.getInstance().timeInMillis}.jpg"
+    }
+
+    private fun saveImage(myBitmap: Bitmap, nameFile: String): String {
+        return MediaStore.Images.Media.insertImage(contentResolver, myBitmap, nameFile, null)
+    }
+
+    private fun dialogSignature(bitmap: Bitmap, imgPath: String){
         val builder = AlertDialog.Builder(this)
         val factory = LayoutInflater.from(this)
         val myView = factory.inflate(R.layout.dialog_signature, null)
@@ -100,7 +111,7 @@ class MainActivity : AppCompatActivity() {
             dialog.dismiss()
         }
         builder.setPositiveButton("Share"){ _, _ ->
-            share(bitmap, "Signature")
+            share(imgPath)
         }
         builder.show().withCenteredButtons()
 
@@ -134,9 +145,7 @@ class MainActivity : AppCompatActivity() {
         negative.layoutParams = layoutParams
     }
 
-    private fun share(source: Bitmap, title: String){
-        val bitmapPath = MediaStore.Images.Media.insertImage(contentResolver, source, title, null)
-        Log.e("BITMAP PATH", bitmapPath)
+    private fun share(bitmapPath: String){
         val bitmapUri: Uri = Uri.parse(bitmapPath)
 
         val intent = Intent(Intent.ACTION_SEND)
